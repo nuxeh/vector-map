@@ -49,6 +49,8 @@ int main(void)
 	int dp;
 	double theta;
 
+	double score[3];
+
 	// optimise use of sqrt
 	// optimised acos() approximation
 
@@ -110,6 +112,14 @@ int main(void)
 				printf("theta: %f\n", (theta / (2 * M_PI)) * 360);
 
 				/* assign scores */
+				/* sides are of equal length */
+				score[0] = 1.0 - ((double) a.m / b.m);
+				/* sides are 90 degrees */
+				score[1] = 1.0 - (theta / (0.5 * M_PI));
+				/* sides are as small as possible */
+				score[2] = 0; //1.0 - (a.m / b.m);
+
+				printf("score: %04f %04f %04f\n", score[0], score[1], score[2]);
 			}
 		}
 	}

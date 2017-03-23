@@ -90,9 +90,8 @@ int main(void)
 			struct connection c1 = connections[i];
 			struct connection c2 = connections[j];
 
-			/* vectors are joined at capstone B
-			 * and don't double back */
-			if (c1.p2 == c2.p1 && c1.p1 != c2.p2)
+			/* vectors both start at capstone B */
+			if (c1.p1 == c2.p1)
 			{
 				printf("%d->%d->%d\n", connections[i].p1,
 							connections[i].p2,

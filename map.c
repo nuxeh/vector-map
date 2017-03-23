@@ -13,6 +13,13 @@ struct quirc_point c[3] = {
 	{30, 120}
 };
 
+struct connection {
+	int p1;
+	int p2;
+	int m;		/* gradient */
+	int d;		/* displacement */
+};
+
 unsigned char img[200 * 200];
 void write_img(void);
 void draw_points(void);
@@ -20,13 +27,36 @@ void draw_points(void);
 int main(void)
 {
 	draw_points();
-
 	printf("hello\n");
 
+	int i, j;
+	double m;
+	int d;
+	int x, y;
+
+	struct connection connections[3 * 3 - 3];
+	int nc = 0;
+
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 3; j++) if (i != j) {
+			x = c[j].x - c[i].x;
+			y = c[j].y - c[i].y;
+
+			printf("%d %d\n", x, y);
+
+			m = (double) y / x;
+			d = (y * y) + (x * x);
+
+			printf("%f %d\n", m, d);
+
+			struct connection c = {i, j, m, d};
+			connections[nc] = c;
+			nc++;
+		}
+	}
 
 
-
-
+	printf("done\n");
 	write_img();
 }
 

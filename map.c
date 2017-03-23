@@ -108,7 +108,7 @@ int main(void)
 				/* calculate angle */
 				// approximate
 				theta = acos((double) dp / (a.m * b.m));
-				printf("theta: %f\n", theta);
+				printf("theta: %f\n", (theta / (2 * M_PI)) * 360);
 
 				/* assign scores */
 			}

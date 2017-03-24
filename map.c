@@ -26,11 +26,12 @@ struct connection {
 	int p1;
 	int p2;
 	struct vector v;	/* connection vector */
+	int allocated;
 };
 
 struct grid {
-	int corners[3];
-	double score[3];
+	struct connection *connections[2];
+	double score;
 };
 
 unsigned char img[200 * 200];
@@ -56,9 +57,13 @@ int main(void)
 	double theta;
 
 	double score[3];
+	double score_acc;
 
 	struct grid grids[QUIRC_MAX_GRIDS];
 	int ng = 0;
+
+	int sc, sd;
+	struct grid st;
 
 	// optimise use of sqrt
 	// optimised acos() approximation
@@ -89,6 +94,7 @@ int main(void)
 			//v.j = y * y;
 
 			c.v = v;
+			c.allocated = 0;
 
 			connections[nc] = c;
 			nc++;
@@ -99,18 +105,18 @@ int main(void)
 	for (i = 0; i < nc; i++) {
 		for (j = 0; j < nc; j++) if (i != j)
 		{
-			struct connection c1 = connections[i];
-			struct connection c2 = connections[j];
+			struct connection *c1 = &connections[i];
+			struct connection *c2 = &connections[j];
 
 			/* vectors both start at capstone B */
-			if (c1.p1 == c2.p1)
+			if (c1->p1 == c2->p1)
 			{
-				printf("%d->%d->%d\n", connections[i].p1,
-							connections[i].p2,
-							connections[j].p2);
+				printf("%d->%d->%d\n", c1->p2,
+						       c1->p1,
+						       c2->p2);
 
-				a = c1.v;
-				b = c2.v;
+				a = c1->v;
+				b = c2->v;
 
 				/* calculate dot product */
 				dp = (a.i * b.i) + (a.j * b.j);
@@ -125,20 +131,23 @@ int main(void)
 
 				/* assign scores */
 				/* sides are of equal length */
-				score[0] = 1.0 - ((double) a.m / b.m);
+				score[0] = fabs(1.0 - ((double) b.m / a.m));
 				/* sides are 90 degrees */
-				score[1] = 1.0 - (theta / (0.5 * M_PI));
+				score[1] = fabs(1.0 - (theta / (0.5 * M_PI)));
 				/* grid is as small as possible */
 				score[2] = 0; //1.0 - (a.m / b.m);
 
-				printf("score: %04f %04f %04f\n", score[0], score[1], score[2]);
+				// accumulate
+				score_acc = score[0] + score[1] + score[2];
+
+				printf("score: %04f %04f %04f = %04f\n",
+				       score[0], score[1], score[2], score_acc);
 
 				/* record grid */
 				if (ng <= QUIRC_MAX_GRIDS) {
-					memcpy(grids[ng].score, score, 3);
-					grids[ng].corners[0] = c1.p2;
-					grids[ng].corners[1] = c1.p1;
-					grids[ng].corners[2] = c2.p2;
+					grids[ng].score = score_acc;
+					grids[ng].connections[0] = c1;
+					grids[ng].connections[1] = c2;
 					ng++;
 				}
 			}
@@ -146,11 +155,34 @@ int main(void)
 	}
 
 	/* sort grids */
-	// replace with balanced binary tree
+	// replace with balanced binary search tree
+	for (sc = 0 ; sc < (ng - 1); sc++) {
+		for (sd = 0 ; sd < ng - sc - 1; sd++) {
+			if (grids[sd].score > grids[sd + 1].score) {
+				st = grids[sd];
+				grids[sd] = grids[sd + 1];
+				grids[sd + 1] = st;
+			}
+		}
+	}
 
+	printf("grids:\n");
 
 	/* record grids */
+	for (i = 0; i < ng; i++)
+	{
+		struct grid *g = &grids[i];
 
+		for (j = 0; j < 2; j++) if (g->connections[j]->allocated)
+			continue;
+
+		printf("%d->%d->%d\n", g->connections[0]->p2,
+				       g->connections[0]->p1,
+				       g->connections[1]->p2);
+
+		for (j = 0; j < 2; j++)
+			g->connections[j]->allocated = 1;
+	}
 
 
 	printf("done\n");

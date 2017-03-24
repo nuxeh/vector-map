@@ -3,6 +3,8 @@
 #include <string.h>
 #include <math.h>
 
+#define QUIRC_MAX_GRIDS 64
+
 struct quirc_point {
 	int x;
 	int y;
@@ -20,11 +22,15 @@ struct vector {
 	int m;			/* magnitude */
 };
 
-
 struct connection {
 	int p1;
 	int p2;
 	struct vector v;	/* connection vector */
+};
+
+struct grid {
+	int corners[3];
+	double score[3];
 };
 
 unsigned char img[200 * 200];
@@ -51,6 +57,9 @@ int main(void)
 
 	double score[3];
 
+	struct grid grids[QUIRC_MAX_GRIDS];
+	int ng = 0;
+
 	// optimise use of sqrt
 	// optimised acos() approximation
 
@@ -65,6 +74,7 @@ int main(void)
 			y = cns[j].y - cns[i].y;
 
 			// approximate square root
+			// or just use squaring
 			d = sqrt((y * y) + (x * x));
 			printf("%d->%d d: %f x: %d y: %d\n", i, j, d, x, y);
 			//d = (y * y) + (x * x);
@@ -85,7 +95,7 @@ int main(void)
 		}
 	}
 
-	/* Evaluate every permutation, and score */
+	/* Evaluate every permutation, score and store grids to list */
 	for (i = 0; i < nc; i++) {
 		for (j = 0; j < nc; j++) if (i != j)
 		{
@@ -106,9 +116,11 @@ int main(void)
 				dp = (a.i * b.i) + (a.j * b.j);
 
 				printf("dp: %d rhs: %f\n", dp, (double) dp / (a.m * b.m));
+
 				/* calculate angle */
 				// approximate
 				theta = acos((double) dp / (a.m * b.m));
+
 				printf("theta: %f\n", (theta / (2 * M_PI)) * 360);
 
 				/* assign scores */
@@ -116,13 +128,30 @@ int main(void)
 				score[0] = 1.0 - ((double) a.m / b.m);
 				/* sides are 90 degrees */
 				score[1] = 1.0 - (theta / (0.5 * M_PI));
-				/* sides are as small as possible */
+				/* grid is as small as possible */
 				score[2] = 0; //1.0 - (a.m / b.m);
 
 				printf("score: %04f %04f %04f\n", score[0], score[1], score[2]);
+
+				/* record grid */
+				if (ng <= QUIRC_MAX_GRIDS) {
+					memcpy(grids[ng].score, score, 3);
+					grids[ng].corners[0] = c1.p2;
+					grids[ng].corners[1] = c1.p1;
+					grids[ng].corners[2] = c2.p2;
+					ng++;
+				}
 			}
 		}
 	}
+
+	/* sort grids */
+	// replace with balanced binary tree
+
+
+	/* record grids */
+
+
 
 	printf("done\n");
 	draw_matches();
